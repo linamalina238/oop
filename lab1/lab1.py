@@ -9,7 +9,7 @@ from utils import center_window
 class MainApp:
     def __init__(self, root):
         self._root = root
-        self._root.title("Лабораторна робота №2")
+        self._root.title("Лабораторна робота №1")
 
         self._result_label = tk.Label(self._root, text="Результат: -", font=("Arial", 12))
         self._result_label.pack(padx=20, pady=20)
