@@ -14,7 +14,7 @@ class Ellipse2D(Shape):
         canvas.delete(tag)
         if self.start:
             x1, y1, x2, y2 = self._corners(current_point)
-            canvas.create_rectangle(x1, y1, x2, y2, outline=self.RUBBER_COLOR, tags=tag)
+            canvas.create_oval(x1, y1, x2, y2, outline=self.RUBBER_COLOR, tags=tag)
 
     def draw_final(self, canvas):
         x1, y1, x2, y2 = self._corners(self.end)

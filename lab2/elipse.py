@@ -7,7 +7,7 @@ class Ellipse2D(Shape):
     def draw_rubber(self, canvas, current_point, tag="rubber"):
         canvas.delete(tag)
         if self.start:
-            canvas.create_rectangle(
+            canvas.create_oval(
                 self.start[0], self.start[1],
                 current_point[0], current_point[1],
                 outline=self.RUBBER_COLOR, tags=tag
