@@ -8,6 +8,7 @@ from elipse import Ellipse2D
 from line_oo import LineOO2D
 from cube import Cube2D
 from tooltip import ToolTip
+from icons import make_icon
 
 N = 114  # Ж = 14, N = Ж + 100
 
@@ -27,14 +28,6 @@ SHAPE_NAMES_UA = {
     "line_oo": "Лінія з кружечками",
     "cube": "Каркас куба",
 }
-SHAPE_ICONS = {
-    "point": "•",
-    "line": "╱",
-    "rectangle": "▭",
-    "ellipse": "◯",
-    "line_oo": "o╱o",
-    "cube": "▣",
-}
 
 
 class MyEditor:
@@ -46,7 +39,6 @@ class MyEditor:
         self.drawing = False
         self.current_shape = None
 
-        
         self.type_var = tk.StringVar(value=self.current_type)
 
         self._build_menu()
@@ -82,15 +74,19 @@ class MyEditor:
     def _build_toolbar(self):
         toolbar = tk.Frame(self.root, bd=1, relief=tk.RAISED)
         toolbar.pack(side=tk.TOP, fill=tk.X)
+        # PhotoImage треба зберігати у полі класу,інакше Python їх видалить
+       
+        self.icons = {}
         for key in SHAPE_CLASSES:
+            self.icons[key] = make_icon(key)
             btn = tk.Radiobutton(
                 toolbar,
-                text=SHAPE_ICONS[key],
-                font=("Arial", 14),
+                image=self.icons[key],
                 variable=self.type_var,
                 value=key,
                 indicatoron=False,
-                width=4,
+                padx=4,
+                pady=4,
                 command=self.on_type_change,
             )
             btn.pack(side=tk.LEFT, padx=1, pady=1)
@@ -103,6 +99,7 @@ class MyEditor:
         self.canvas.bind("<B1-Motion>", self.on_mouse_move)
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
 
+    # відмітка поточного типу в меню (Ж mod 2 = 0)
     def on_init_menu_popup(self):
         self.type_var.set(self.current_type)
 
@@ -145,7 +142,7 @@ class MyEditor:
             self.drawing = False
 
 
-
+# глобальний статичний об'єкт редактора
 root = tk.Tk()
 editor = MyEditor(root)
 
