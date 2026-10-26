@@ -110,5 +110,14 @@ _BUILDERS = {
 }
 
 
+def _default():
+    # іконка для нової фігури, для якої ще не намальовано власної
+    b = _Bitmap()
+    b.rect(4, 4, 19, 19)
+    b.line(4, 19, 19, 4, thick=1)
+    return b
+
+
 def make_icon(key):
-    return _BUILDERS[key]().to_photo()
+    builder = _BUILDERS.get(key, _default)
+    return builder().to_photo()

@@ -13,8 +13,10 @@ from icons import make_icon
 
 N = 114  # Ж = 14 (як у Lab3 і Lab4), N = Ж + 100
 
-# Щоб додати нову фігуру: зробити її файл і дописати клас сюди.
-# Меню, кнопки, таблиця і файл самі підхоплять її через KEY і NAME.
+# Щоб додати нову фігуру: зробити її модуль (клас-нащадок Shape з KEY і NAME)
+# і дописати клас у цей список. Меню, кнопки Toolbar, таблиця і файл
+# самі підхоплять її через KEY і NAME. Якщо для неї немає своєї іконки
+# в icons.py, на кнопці буде стандартна іконка.
 SHAPE_CLASSES = [Point2D, Line2D, Rectangle2D, Ellipse2D, LineOO2D, Cube2D]
 SHAPES_BY_KEY = {cls.KEY: cls for cls in SHAPE_CLASSES}
 
@@ -55,8 +57,10 @@ class MyEditor:
         # той самий.
         if not hasattr(MyEditor.get_instance, "obj"):
             MyEditor._allow_create = True
-            MyEditor.get_instance.obj = MyEditor()
-            MyEditor._allow_create = False
+            try:
+                MyEditor.get_instance.obj = MyEditor()
+            finally:
+                MyEditor._allow_create = False
         return MyEditor.get_instance.obj
 
     def run(self):
@@ -81,13 +85,16 @@ class MyEditor:
                 value=cls.KEY,
                 command=self.on_type_change,
             )
-        objects_menu.add_separator()
-        objects_menu.add_checkbutton(
+        menubar.add_cascade(label="Об'єкти", menu=objects_menu)
+
+        # окремий пункт меню для відкриття/закриття вікна таблиці
+        view_menu = tk.Menu(menubar, tearoff=0)
+        view_menu.add_checkbutton(
             label="Таблиця об'єктів",
             variable=self.table_var,
             command=self.on_toggle_table,
         )
-        menubar.add_cascade(label="Об'єкти", menu=objects_menu)
+        menubar.add_cascade(label="Вигляд", menu=view_menu)
 
         help_menu = tk.Menu(menubar, tearoff=0)
         help_menu.add_command(label="Про програму", command=self.on_about)
@@ -98,7 +105,7 @@ class MyEditor:
     def _build_toolbar(self):
         toolbar = tk.Frame(self.root, bd=1, relief=tk.RAISED)
         toolbar.pack(side=tk.TOP, fill=tk.X)
-       
+        # PhotoImage треба зберігати у полі класу, інакше Python їх видалить
         self.icons = {}
         for cls in SHAPE_CLASSES:
             self.icons[cls.KEY] = make_icon(cls.KEY)
@@ -122,17 +129,17 @@ class MyEditor:
         self.canvas.bind("<B1-Motion>", self.on_mouse_move)
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
 
-   
+    # відмітка поточного типу в меню (Ж mod 2 = 0)
     def on_init_menu_popup(self):
         self.type_var.set(self.current_type)
 
     def on_type_change(self):
         self.current_type = self.type_var.get()
 
-   
 
     def draw_shape(self, shape):
-        
+        # запам'ятовуємо id елементів Canvas, з яких складається фігура,
+        # щоб потім підсвітити її при виділенні рядка таблиці
         before = set(self.canvas.find_all())
         shape.draw_final(self.canvas)
         shape.items = list(set(self.canvas.find_all()) - before)
@@ -149,7 +156,6 @@ class MyEditor:
     def all_rows(self):
         return [self.row_for(i) for i in range(self.count)]
 
-    
 
     def on_new(self):
         self.canvas.delete("all")
@@ -214,8 +220,6 @@ class MyEditor:
             "Лабораторна робота №5\nГрафічний редактор об'єктів\nВаріант 13",
         )
 
-   
-
     def on_toggle_table(self):
         if self.table_var.get():
             x = self.root.winfo_rootx() + self.root.winfo_width() + 10
@@ -226,7 +230,7 @@ class MyEditor:
             self.table.close()
             self.canvas.delete("select")
 
-   
+    # колбеки, які викликає таблиця (сама таблиця про MyEditor нічого не знає)
     def on_table_closed(self):
         self.table_var.set(False)
         self.canvas.delete("select")
@@ -243,7 +247,6 @@ class MyEditor:
                 outline="red", width=2, dash=(3, 3), tags="select",
             )
 
-    
     def on_table_delete(self, index):
         if index >= self.count:
             return
@@ -252,8 +255,6 @@ class MyEditor:
         self.count -= 1
         self.redraw()
         self.table.set_rows(self.all_rows())
-
-   
 
     def on_mouse_down(self, event):
         if self.count >= N:
