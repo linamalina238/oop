@@ -24,7 +24,12 @@ class MessageServer:
         self.root = root
         self.handler = handler
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      
+
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        else:
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
+        
         self.sock.bind((HOST, PORTS[name]))
         self.sock.listen()
         self.sock.setblocking(False)
