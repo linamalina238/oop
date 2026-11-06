@@ -1,9 +1,45 @@
+import socket
 import sys
 import tkinter as tk
 from fractions import Fraction
 from tkinter import messagebox
 
-from messenger import MessageServer
+HOST = "127.0.0.1"
+PORT = 50003
+
+
+class MessageServer:
+    def __init__(self, root, port, handler):
+        self.root = root
+        self.handler = handler
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        else:
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind((HOST, port))
+        self.sock.listen()
+        self.sock.setblocking(False)
+        self.root.after(50, self.check)
+
+    def check(self):
+        try:
+            conn, _ = self.sock.accept()
+        except BlockingIOError:
+            conn = None
+        if conn:
+            conn.settimeout(2.0)
+            text = conn.recv(4096).decode("utf-8").strip()
+            try:
+                answer = self.handler(text)
+            except Exception as e:
+                answer = f"ERROR {e}"
+            conn.sendall((answer + "\n").encode("utf-8"))
+            conn.close()
+        self.root.after(50, self.check)
+
+    def close(self):
+        self.sock.close()
 
 
 class Object3App:
@@ -23,7 +59,7 @@ class Object3App:
         self.status.pack()
 
         try:
-            self.server = MessageServer(self.root, "Object3", self.on_message)
+            self.server = MessageServer(self.root, PORT, self.on_message)
         except OSError:
             messagebox.showerror("Object3", "Програма Object3 вже запущена")
             self.root.destroy()

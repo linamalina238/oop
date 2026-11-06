@@ -1,15 +1,50 @@
 import random
+import socket
 import sys
 import tkinter as tk
 from tkinter import messagebox
 
-from messenger import MessageServer
+HOST = "127.0.0.1"
+PORT = 50002
+
+
+class MessageServer:
+    def __init__(self, root, port, handler):
+        self.root = root
+        self.handler = handler
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        else:
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind((HOST, port))
+        self.sock.listen()
+        self.sock.setblocking(False)
+        self.root.after(50, self.check)
+
+    def check(self):
+        try:
+            conn, _ = self.sock.accept()
+        except BlockingIOError:
+            conn = None
+        if conn:
+            conn.settimeout(2.0)
+            text = conn.recv(4096).decode("utf-8").strip()
+            try:
+                answer = self.handler(text)
+            except Exception as e:
+                answer = f"ERROR {e}"
+            conn.sendall((answer + "\n").encode("utf-8"))
+            conn.close()
+        self.root.after(50, self.check)
+
+    def close(self):
+        self.sock.close()
 
 
 class Object2App:
     def __init__(self):
         self.root = tk.Tk()
-        
         self.root.withdraw()
         self.root.title("Object2 - матриця")
         self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
@@ -24,7 +59,7 @@ class Object2App:
         self.status.pack()
 
         try:
-            self.server = MessageServer(self.root, "Object2", self.on_message)
+            self.server = MessageServer(self.root, PORT, self.on_message)
         except OSError:
             messagebox.showerror("Object2", "Програма Object2 вже запущена")
             self.root.destroy()
@@ -65,7 +100,6 @@ class Object2App:
                          bg="white", padx=2, pady=3).grid(row=i, column=j)
         self.status.config(text="Матрицю записано в Clipboard у текстовому форматі")
 
-    
     def matrix_to_text(self):
         return "\n".join("\t".join(str(v) for v in row) for row in self.matrix)
 
@@ -80,7 +114,7 @@ class Object2App:
         self.root.deiconify()
         self.root.lift()
         self.root.update_idletasks()
-       
+
         return f"OK {self.root.winfo_reqwidth()} {self.root.winfo_reqheight()}"
 
     def on_exit(self):
